@@ -1,0 +1,246 @@
+{
+  "_note": "Global defaults for the /run-issue engine. A repo may override any of this with a deep-merged <repo>/.run-issue.json. MERGE RULE: dicts merge, lists REPLACE — an overlay meant to narrow a signal must not silently widen it. A repo may also pin top-level `test_cmd` (a non-empty string) in its own .run-issue.json to override the derived test command; there is no global default for it here because the derived command is always repo-specific.",
+  "bounce_cap": 2,
+  "check_bounce_cap": 1,
+  "_check_note": "Post-checks compute a station's verdict from an exit code, a git object or a GitHub response instead of believing the envelope. A failure self-bounces (keyed '<station>-><station>', so it can never spend a real bounce budget) at most check_bounce_cap times, then ADVANCES and is reported at the final gate — the same doctrine as every other spent budget here. `skip` lets a repo overlay disable one it cannot support; disabling a check is a repo decision, never a station's. `suite_timeout` (seconds) bounds how long a post-check's own test-suite run may take before it counts as unrunnable; a repo whose suite genuinely outruns 900s raises this in its own .run-issue.json, and an invalid value (non-int, bool, <=0) falls back to 900 with a warning.",
+  "checks": {
+    "enabled": true,
+    "skip": [],
+    "suite_timeout": 900
+  },
+  "default_mode": "full",
+  "stations": [
+    "researcher",
+    "planner",
+    "sdet",
+    "dev",
+    "verifier",
+    "reviewer",
+    "fixer"
+  ],
+  "modes": {
+    "full": {
+      "stations": [
+        "researcher",
+        "planner",
+        "sdet",
+        "dev",
+        "verifier",
+        "reviewer",
+        "fixer"
+      ],
+      "classifier": true,
+      "specialists": true
+    },
+    "lean": {
+      "stations": [
+        "researcher",
+        "planner",
+        "dev",
+        "reviewer",
+        "fixer"
+      ],
+      "classifier": false,
+      "specialists": false,
+      "skipped": [
+        "sdet",
+        "verifier",
+        "run-specialist"
+      ],
+      "absorbed_by": {
+        "sdet": "dev — writes its own tests alongside the implementation; there is no RED-first phase",
+        "verifier": "the test suite + the CI gate — nothing observes the running app",
+        "specialists": "run-reviewer alone — no parallel single-lens pass before the fix phase"
+      },
+      "tradeoff": "FASTER but WEAKER. Three guarantees are lost, not relocated: (1) tests are no longer authored RED-first by an independent station, so a test written to fit the implementation still passes; (2) nothing observes the feature actually working in a browser; (3) only one reviewer sees the diff. The test-root guard is not 'inert' here — it is INAPPLICABLE: with no sdet commit there is no sdet_sha and no baseline to protect, which is a different and honest thing. CI is still the real gate. Use for low-risk, well-specified work; use full mode for auth, migrations, payment, or public API contracts."
+    }
+  },
+  "_human_gates": "EXACTLY THREE, and no station may invent a fourth: (1) plan approval, (2) a review finding an automated pass should not be the last word on, (3) the PR is ready for a human to review and merge. Everything else either self-corrects, or is recorded and carried into gate 3's report. This is why the status vocabulary has no 'blocked': a thin issue surfaces its Definition-of-Ready gaps at gate 1 alongside the plan rather than stopping before it, and a spent budget opens a DRAFT PR and reports at gate 3 rather than stopping mid-flow.",
+  "evidence_required_stations": [
+    "sdet",
+    "dev",
+    "verifier",
+    "reviewer",
+    "fixer"
+  ],
+  "_evidence_note": "A 'passed' envelope from these must carry a non-empty evidence.commands[]. Cooperative completeness check, not fabrication-proof — it catches an omitted pass, not a determined fabricator. Authenticity comes from H1/H2 in run-issue.md, not from envelope shape. researcher and planner are exempt: neither's claim rests on a command's exit code.",
+  "classification": {
+    "_note": "Stack-neutral defaults. Repo-specific signals (payment, cache-key, seo, framework layouts) belong in <repo>/.run-issue.json, where the `signals` dict merges and each glob list replaces.",
+    "signals": {
+      "migration": [
+        "**/migrations/**",
+        "db/migrate/**",
+        "prisma/migrations/**",
+        "supabase/migrations/**",
+        "**/*.sql"
+      ],
+      "auth": [
+        "**/{auth,authz,permissions,policies,middleware,guards}/**",
+        "**/*permission*",
+        "**/*guard*"
+      ],
+      "api-contract": [
+        "**/routes/**",
+        "**/openapi*.{yaml,yml,json}",
+        "**/swagger*.{yaml,yml,json}",
+        "**/*.proto",
+        "**/schema.graphql",
+        "**/pages/api/**",
+        "**/app/api/**/route.{ts,js}"
+      ],
+      "dependency": [
+        "package.json",
+        "**/package.json",
+        "*-lock.*",
+        "**/*-lock.*",
+        "composer.{json,lock}",
+        "pubspec.{yaml,lock}",
+        "requirements*.txt",
+        "pyproject.toml",
+        "go.{mod,sum}"
+      ],
+      "ci-config": [
+        ".github/workflows/**",
+        "Dockerfile*",
+        "**/Dockerfile*",
+        "docker-compose*",
+        "**/docker-compose*"
+      ],
+      "backend": [
+        "**/routes/**",
+        "**/app/Http/**",
+        "**/app/Models/**",
+        "**/database/migrations/**",
+        "**/app/api/**/route.{ts,js}",
+        "**/pages/api/**",
+        "**/*.go",
+        "**/src/main/java/**"
+      ],
+      "frontend": [
+        "**/*.{tsx,jsx,vue,svelte}",
+        "**/components/**",
+        "**/app/**/page.tsx",
+        "**/resources/js/**",
+        "**/resources/views/**"
+      ]
+    },
+    "_qa_note": "`backend`/`frontend` drive phase 4.5's routing ONLY — they are deliberately absent from `signal_severity` and `review_policy.signals`. They classify what to runtime-verify, not how risky the change is; giving them a severity weight would double-count paths already scored by `api-contract`/`migration`.",
+    "signal_severity": {
+      "auth": 25,
+      "migration": 20,
+      "api-contract": 15,
+      "ci-config": 10,
+      "dependency": 10
+    },
+    "type_rules": [
+      {
+        "type": "docs",
+        "paths_all": [
+          "docs/**",
+          "*.md",
+          "**/*.md"
+        ]
+      },
+      {
+        "type": "migration",
+        "paths_any": [
+          "**/migrations/**",
+          "db/migrate/**",
+          "prisma/migrations/**"
+        ]
+      },
+      {
+        "type": "bugfix",
+        "labels_any": [
+          "bug",
+          "bugfix",
+          "defect"
+        ]
+      },
+      {
+        "type": "refactor",
+        "labels_any": [
+          "refactor",
+          "chore",
+          "tech-debt"
+        ]
+      }
+    ],
+    "type_default": "feature",
+    "risk_weights": {
+      "blast_radius": {
+        "d1": 10,
+        "d2": 25,
+        "unknown": 25
+      },
+      "file_count": {
+        "per_file": 2,
+        "cap": 20
+      },
+      "loc": {
+        "per_100": 3,
+        "cap": 15
+      },
+      "migration_present": 15,
+      "signal_severity_cap": 40
+    },
+    "migration_globs": [
+      "**/migrations/**",
+      "db/migrate/**",
+      "prisma/migrations/**"
+    ],
+    "bands": {
+      "medium": 30,
+      "high": 60
+    },
+    "blast_radius": {
+      "d1_max_depth": 1,
+      "_note": "upstream_depth comes from gitnexus impact. Absent -> blast_radius 'unknown', scored as d2. That is deliberate: gitnexus is best-effort in this pipeline, and silently scoring a missing graph as d1 would park every PR in the low band and make the panel never fire."
+    }
+  },
+  "review_policy": {
+    "_note": "The single data-only source of (signals, risk_band, ticket_type) -> specialist lens. The generalist run-reviewer ALWAYS runs and is NEVER in the resolver output. run-laravel-review is deliberately absent: its trigger is a repo fact, not a changed path, so it cannot be a signal — it stays self-gating.",
+    "generalist": "reviewer",
+    "order": [
+      "security",
+      "performance",
+      "api-contract"
+    ],
+    "signals": {
+      "auth": [
+        "security"
+      ],
+      "migration": [
+        "performance"
+      ],
+      "api-contract": [
+        "api-contract"
+      ],
+      "dependency": [
+        "security"
+      ]
+    },
+    "risk_band": {
+      "high": [
+        "security",
+        "performance"
+      ]
+    },
+    "ticket_type": {},
+    "_unmapped_signals": "ci-config raises the risk score but fires no dedicated lens, on purpose — a workflow or Dockerfile change is squarely the generalist reviewer's job, and 'the job was disabled to go green' is exactly what a human notices at Gate 2. It still counts toward the score, so a CI change bundled with anything else can push the band to high and fire security+performance that way. Keeping the resolver's output MINIMAL is the point: a panel that spawns on everything gets ignored like any other alarm that is always on.",
+    "lenses": {
+      "security": {
+        "focus": "authorization, injection, secrets, and data exposure",
+        "prompt": "Review this diff through exactly one lens: SECURITY. (a) Authorization — every new or changed route/handler/action enforces access control the way this codebase already does it; no owner-bypass, no check smuggled somewhere it can be skipped. (b) Injection and untrusted input — validated at the trust boundary; no string-built SQL, shell, or template. (c) Secrets — nothing hardcoded, nothing new logged. (d) Data exposure — sweep EVERY public or unauthenticated surface that could now serialize a changed model or record. A per-actor or internal field reaching the wrong viewer is critical. Do not trust the one surface the diff names; check all of them."
+      },
+      "performance": {
+        "focus": "query patterns, unbounded work, and hot-path cost",
+        "prompt": "Review this diff through exactly one lens: PERFORMANCE. (a) N+1 and query-in-loop — any new query inside an iteration, any relation accessed without eager-loading. (b) Unbounded work — a list endpoint, job, or scan with no limit, pagination, or index behind its filter. (c) Cache correctness — a key that does not include everything the value varies by (actor, tenant, locale); a falsy cached value read back as a miss. (d) Hot-path cost — work moved into a request path that did not have it, a synchronous call where the surrounding code queues. Cite the specific call site, not a general worry."
+      },
+      "api-contract": {
+        "focus": "breaking changes to a published interface",
+        "prompt": "Review this diff through exactly one lens: API CONTRACT. (a) Breaking changes — a removed or renamed field, a narrowed type, a changed status code, a newly-required request parameter, a changed default. (b) Consistency — the new shape matches the response/error envelope every neighbouring endpoint already uses. (c) Documentation drift — the OpenAPI/schema/generated-doc artifact in the repo matches what the code now returns. (d) Versioning — a breaking change ships behind a version or a deprecation, not silently. Name the exact consumer-visible difference; a change no client can observe is not a finding."
+      }
+    }
+  }
+}
