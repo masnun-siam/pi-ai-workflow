@@ -42,11 +42,15 @@ export type RouteActionKind = (typeof RouteActionKind)[keyof typeof RouteActionK
 
 /** The router's decision after processing an envelope. */
 export class RouteAction {
-	constructor(
-		public readonly kind: RouteActionKind,
-		public readonly target?: string,
-		public readonly reason: string = "",
-	) {}
+	readonly kind: RouteActionKind;
+	readonly target?: string;
+	readonly reason: string;
+
+	constructor(kind: RouteActionKind, target?: string, reason: string = "") {
+		this.kind = kind;
+		this.target = target;
+		this.reason = reason;
+	}
 
 	toString(): string {
 		if (this.kind === RouteActionKind.ADVANCE || this.kind === RouteActionKind.BOUNCE) {

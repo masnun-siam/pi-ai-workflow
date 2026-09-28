@@ -29,12 +29,12 @@ export function dataDir(): string {
 }
 
 export class DieError extends Error {
-	constructor(
-		public readonly code: number,
-		message: string,
-	) {
+	readonly code: number;
+
+	constructor(code: number, message: string) {
 		super(message);
 		this.name = "DieError";
+		this.code = code;
 	}
 }
 

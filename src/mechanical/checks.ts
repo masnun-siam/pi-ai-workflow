@@ -21,11 +21,15 @@ export function suiteTimeout(config: Record<string, unknown> | null): number {
 }
 
 export class CheckResult {
-	constructor(
-		public readonly ok: boolean,
-		public readonly reason: string = "",
-		public readonly unrunnable: boolean = false,
-	) {}
+	readonly ok: boolean;
+	readonly reason: string;
+	readonly unrunnable: boolean;
+
+	constructor(ok: boolean, reason: string = "", unrunnable: boolean = false) {
+		this.ok = ok;
+		this.reason = reason;
+		this.unrunnable = unrunnable;
+	}
 
 	static passed(reason: string = ""): CheckResult {
 		return new CheckResult(true, reason);
