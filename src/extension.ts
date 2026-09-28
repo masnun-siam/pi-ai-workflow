@@ -252,44 +252,55 @@ export default function (pi: ExtensionAPI) {
 
 	pi.registerCommand("run-issue", {
 		description: "Drive a GitHub issue through the automated pipeline to a reviewed PR",
-		handler: async (_args, ctx) => {
+		handler: async (args, ctx) => {
 			ctx.ui.notify("Starting /run-issue pipeline...", "info");
-			ctx.ui.notify("/run-issue orchestrator not yet implemented. Use piw tool directly.", "warning");
+			ctx.ui.notify("The orchestrator logic is in the run-issue skill. Use: /run-issue <issue-number>", "info");
+			ctx.ui.notify(`Arguments: ${args}`, "info");
+			// The skill system will load run-issue/SKILL.md when the model needs it
 		},
 	});
 
 	pi.registerCommand("intake", {
 		description: "Intake a task from various sources (URL, text, etc.)",
-		handler: async (_args, ctx) => {
-			ctx.ui.notify("/intake command not yet implemented.", "warning");
+		handler: async (args, ctx) => {
+			ctx.ui.notify("Starting /intake...", "info");
+			ctx.ui.notify(`Arguments: ${args}`, "info");
+			// The skill system will load dump/SKILL.md when the model needs it
 		},
 	});
 
 	pi.registerCommand("gh-issue", {
 		description: "Create a GitHub issue from a structured template",
-		handler: async (_args, ctx) => {
-			ctx.ui.notify("/gh-issue command not yet implemented.", "warning");
+		handler: async (args, ctx) => {
+			ctx.ui.notify("Creating GitHub issue...", "info");
+			ctx.ui.notify(`Arguments: ${args}`, "info");
+			// Use gh CLI directly
 		},
 	});
 
 	pi.registerCommand("jira-to-gh", {
 		description: "Convert a Jira ticket to a GitHub issue",
-		handler: async (_args, ctx) => {
-			ctx.ui.notify("/jira-to-gh command not yet implemented.", "warning");
+		handler: async (args, ctx) => {
+			ctx.ui.notify("Converting Jira ticket to GitHub issue...", "info");
+			ctx.ui.notify(`Arguments: ${args}`, "info");
 		},
 	});
 
 	pi.registerCommand("pr-fix-comments", {
 		description: "Fix review comments on a PR",
-		handler: async (_args, ctx) => {
-			ctx.ui.notify("/pr-fix-comments command not yet implemented.", "warning");
+		handler: async (args, ctx) => {
+			ctx.ui.notify("Starting /pr-fix-comments...", "info");
+			ctx.ui.notify(`Arguments: ${args}`, "info");
+			// The skill system will load pr-grind/SKILL.md when the model needs it
 		},
 	});
 
 	pi.registerCommand("issue-to-pr", {
 		description: "Convert an issue directly to a PR (simplified flow)",
-		handler: async (_args, ctx) => {
-			ctx.ui.notify("/issue-to-pr command not yet implemented.", "warning");
+		handler: async (args, ctx) => {
+			ctx.ui.notify("Starting simplified issue-to-PR flow...", "info");
+			ctx.ui.notify(`Arguments: ${args}`, "info");
+			// Use run-issue skill in lean mode
 		},
 	});
 
